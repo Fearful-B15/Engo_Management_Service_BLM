@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #d6d6d6;
+            color: #000;
+        }
+
+        /* Top navigation */
+        .top-nav {
+            height: 60px;
+            background: #3264A1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .top-nav h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .top-nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .menu-toggle {
+            display: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Side navigation */
+        .side-nav {
+            width: 200px;
+            background: #3264A1;
+            position: fixed;
+            top: 60px;
+            bottom: 0;
+            padding-top: 20px;
+            transition: transform 0.3s ease;
+        }
+        .side-nav a {
+            display: block;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            margin-bottom: 5px;
+        }
+        .side-nav a:hover {
+            background: #ffffff;
+            color: #000;
+        }
+
+        /* Main content */
+        .main-content {
+            margin-left: 200px;
+            padding: 20px;
+            margin-top: 60px;
+        }
+
+        h2 {
+            color: #3264A1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background: #3264A1;
+            color: white;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .side-nav {
+                transform: translateX(-220px);
+                z-index: 10;
+            }
+            .side-nav.active {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .menu-toggle {
+                display: block;
+                color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Top Navigation -->
+    <div class="top-nav">
+        <span class="menu-toggle" onclick="toggleMenu()">☰</span>
+        <h1>Dashboard</h1>
+        <a href="index.html" onclick="logout()">Logout</a>
+    </div>
+
+    <!-- Side Navigation -->
+    <div class="side-nav" id="sideNav">
+        <a href="Dashboard.html">Home</a>
+        <a href="index.html">Form</a>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <h2>Maintenance Reports</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th><th>Date</th><th>House</th><th>Room</th>
+                    <th>Urgency</th><th>Problem</th><th>Description</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="reportTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        function toggleMenu() {
+            document.getElementById('sideNav').classList.toggle('active');
+        }
+
+        // Load reports from server
+        function loadReports() {
+            fetch("/reports")
+            .then(res => res.json())
+            .then(data => {
+                let rows = "";
+                data.forEach(r => {
+                    rows += `
+                        <tr>
+                            <td>${r.id}</td>
+                            <td>${r.date}</td>
+                            <td>${r.house}</td>
+                            <td>${r.room}</td>
+                            <td>${r.urgency}</td>
+                            <td>${r.problem}</td>
+                            <td>${r.description}</td>
+                            <td><button onclick="resolveReport('${r.id}')">Resolve</button></td>
+                        </tr>`;
+                });
+                document.getElementById("reportTable").innerHTML = rows;
+            });
+        }
+
+        // Delete a report
+        function resolveReport(id) {
+            fetch("/deleteReport", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id })
+            })
+            .then(res => res.json())
+            .then(() => loadReports());
+        }
+
+        // Logout function (just redirect to login page)
+        function logout() {
+            // In a real app, you’d clear a token/session here
+            window.location.href = "index.html";
+        }
+
+        // Initial load
+        loadReports();
+    </script>
+
+</body>
+</html>

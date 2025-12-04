@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employee Login</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #d6d6d6;
+        color: #000;
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 15px;
+    }
+
+    .login-container {
+        width: 100%;
+        max-width: 420px;
+        padding: 30px 25px;
+        background: #3264A1;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        box-sizing: border-box;
+    }
+
+    .login-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .login-header .logo {
+        width: 70%;
+        max-width: 280px;
+        height: auto;
+    }
+
+    h2 {
+        text-align: center;
+        color: #fff;
+        margin-bottom: 20px;
+    }
+
+    .error {
+        color: #ffb3b3;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px;
+        border-radius: 5px;
+        text-align: center;
+        margin-bottom: 15px;
+        display: none;
+    }
+
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        margin-top: 6px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 16px;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #fff;
+        color: #3264A1;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+        border-radius: 6px;
+        margin-top: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        background: #264d7e;
+        color: #fff;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+        body { padding: 10px; background: #f2f2f2; }
+        .login-container { width: 100%; padding: 20px; border-radius: 8px; box-shadow: none; }
+        .login-header .logo { width: 80%; max-width: 250px; }
+        h2 { font-size: 1.4rem; }
+        input[type="text"], input[type="password"] { font-size: 15px; }
+        .btn { font-size: 15px; padding: 10px; }
+    }
+
+    @media (max-width: 380px) {
+        .login-container { padding: 15px; }
+        .btn { font-size: 14px; }
+        h2 { font-size: 1.2rem; }
+    }
+</style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <img src="Engo.png" alt="Logo" class="logo">
+        </div>
+        <h2>Employee Login</h2>
+        <p class="error" id="errorMsg"></p>
+        <form id="loginForm">
+            <label for="id">Employee ID:</label>
+            <input type="text" id="id" placeholder="Employee ID" required>
+
+            <label for="pw">Password:</label>
+            <input type="password" id="pw" placeholder="Password" required>
+
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+
+<script>
+const form = document.getElementById('loginForm');
+const errorMsg = document.getElementById('errorMsg');
+
+form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const id = document.getElementById('id').value.trim();
+    const pw = document.getElementById('pw').value.trim();
+
+    if (!id || !pw) {
+        errorMsg.textContent = "Please enter both Employee ID and Password.";
+        errorMsg.style.display = "block";
+        return;
+    }
+
+    fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employee_id: id, password: pw })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            window.location.href = "Form.html"; // redirect to form/dashboard
+        } else {
+            errorMsg.textContent = "Invalid login credentials.";
+            errorMsg.style.display = "block";
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        errorMsg.textContent = "Error connecting to server.";
+        errorMsg.style.display = "block";
+    });
+});
+
+// Optional: allow Enter key to submit
+document.getElementById('pw').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') form.dispatchEvent(new Event('submit'));
+});
+</script>
+</body>
+</html>

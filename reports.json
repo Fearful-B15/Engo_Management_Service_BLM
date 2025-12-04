@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "date": "2025-01-01",
+        "house": "House A",
+        "room": "101",
+        "urgency": "High",
+        "problem": "Leak",
+        "description": "Pipe leaking under sink."
+    },
+    {
+        "id": 2,
+        "date": "2025-01-02",
+        "house": "House B",
+        "room": "202",
+        "urgency": "Low",
+        "problem": "Light",
+        "description": "Bulb burned out."
+    }
+]
