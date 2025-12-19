@@ -4,79 +4,109 @@ import path from "path";
 import csv from "csv-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = 3000;
 
+/* =======================
+   PATH SETUP (IMPORTANT)
+======================= */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* =======================
+   MIDDLEWARE
+======================= */
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static("public")); // serves HTML files inside /public
+app.use(express.static("public"));
 
-// CSV FILES
-const adminFile = "Admin.csv";      // <<== FIXED
-const reportsFile = "reports.csv";
+/* =======================
+   CSV FILE PATHS
+======================= */
+const adminFile = path.join(__dirname, "Admin.csv");
+const reportsFile = path.join(__dirname, "reports.csv");
 
-// READ CSV HELPER
+/* =======================
+   ENSURE CSV FILES EXIST
+======================= */
+if (!fs.existsSync(adminFile)) {
+    console.error("Admin.csv is missing!");
+}
+
+if (!fs.existsSync(reportsFile)) {
+    fs.writeFileSync(
+        reportsFile,
+        "id,date,house,room,urgency,problem,description\n"
+    );
+}
+
+/* =======================
+   READ CSV HELPER
+======================= */
 function readCSV(filePath) {
     return new Promise((resolve) => {
         const results = [];
         fs.createReadStream(filePath)
             .pipe(csv())
             .on("data", (data) => results.push(data))
-            .on("end", () => resolve(results));
+            .on("end", () => resolve(results))
+            .on("error", () => resolve([]));
     });
 }
 
-// LOGIN ENDPOINT
+/* =======================
+   LOGIN
+======================= */
 app.post("/login", async (req, res) => {
     const { employee_id, password } = req.body;
 
     const admins = await readCSV(adminFile);
 
-    console.log("Loaded admins:", admins);
-    console.log("Attempt login:", employee_id, password);
-
     const found = admins.find(
         (e) =>
-            e.employee_id.trim() === employee_id.trim() &&
-            e.password.trim() === password.trim()
+            e.employee_id?.trim() === employee_id?.trim() &&
+            e.password?.trim() === password?.trim()
     );
 
-    if (found) {
-        res.json({ success: true });
-    } else {
-        res.json({ success: false });
-    }
+    res.json({ success: !!found });
 });
 
-// GET ALL REPORTS
+/* =======================
+   GET ALL REPORTS
+======================= */
 app.get("/reports", async (req, res) => {
     const reports = await readCSV(reportsFile);
     res.json(reports);
 });
 
-// ADD NEW REPORT
+/* =======================
+   ADD NEW REPORT
+======================= */
 app.post("/addReport", (req, res) => {
     const { id, date, house, room, urgency, problem, description } = req.body;
 
     const line = `${id},${date},${house},${room},${urgency},${problem},${description}\n`;
 
     fs.appendFile(reportsFile, line, (err) => {
-        if (err) return res.json({ success: false });
-
+        if (err) {
+            console.error(err);
+            return res.json({ success: false });
+        }
         res.json({ success: true });
     });
 });
 
-// DELETE REPORT
+/* =======================
+   DELETE REPORT
+======================= */
 app.post("/deleteReport", async (req, res) => {
     const { id } = req.body;
 
     const reports = await readCSV(reportsFile);
-
     const filtered = reports.filter((r) => r.id !== id);
 
-    // Rewrite CSV
     const header = "id,date,house,room,urgency,problem,description\n";
     const rows = filtered
         .map(
@@ -86,12 +116,17 @@ app.post("/deleteReport", async (req, res) => {
         .join("\n");
 
     fs.writeFile(reportsFile, header + rows + "\n", (err) => {
-        if (err) return res.json({ success: false });
+        if (err) {
+            console.error(err);
+            return res.json({ success: false });
+        }
         res.json({ success: true });
     });
 });
 
-// RUN SERVER
+/* =======================
+   START SERVER
+======================= */
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`✅ Server running at http://localhost:${PORT}`);
 });
