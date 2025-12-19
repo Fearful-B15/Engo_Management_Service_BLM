@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Dashboard</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -23,15 +24,18 @@
             padding: 0 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
+
         .top-nav h1 {
             margin: 0;
             font-size: 24px;
         }
+
         .top-nav a {
             color: white;
             text-decoration: none;
             font-weight: bold;
         }
+
         .menu-toggle {
             display: none;
             font-size: 24px;
@@ -48,6 +52,7 @@
             padding-top: 20px;
             transition: transform 0.3s ease;
         }
+
         .side-nav a {
             display: block;
             color: white;
@@ -55,6 +60,7 @@
             text-decoration: none;
             margin-bottom: 5px;
         }
+
         .side-nav a:hover {
             background: #ffffff;
             color: #000;
@@ -76,18 +82,29 @@
             border-collapse: collapse;
             background: #fff;
         }
+
         th, td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
+
         th {
             background: #3264A1;
             color: white;
         }
+
         button {
-            padding: 5px 10px;
+            padding: 6px 12px;
             cursor: pointer;
+            border: none;
+            background: #3264A1;
+            color: white;
+            border-radius: 4px;
+        }
+
+        button:hover {
+            background: #254c7d;
         }
 
         /* Responsive */
@@ -96,12 +113,15 @@
                 transform: translateX(-220px);
                 z-index: 10;
             }
+
             .side-nav.active {
                 transform: translateX(0);
             }
+
             .main-content {
                 margin-left: 0;
             }
+
             .menu-toggle {
                 display: block;
                 color: white;
@@ -109,6 +129,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <!-- Top Navigation -->
@@ -127,11 +148,22 @@
     <!-- Main Content -->
     <div class="main-content">
         <h2>Maintenance Reports</h2>
+
+        <button onclick="downloadCSV()" style="margin-bottom: 12px;">
+            Download CSV
+        </button>
+
         <table>
             <thead>
                 <tr>
-                    <th>ID</th><th>Date</th><th>House</th><th>Room</th>
-                    <th>Urgency</th><th>Problem</th><th>Description</th><th>Action</th>
+                    <th>ID</th>
+                    <th>Date</th>
+                    <th>House</th>
+                    <th>Room</th>
+                    <th>Urgency</th>
+                    <th>Problem</th>
+                    <th>Description</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody id="reportTable"></tbody>
@@ -146,24 +178,29 @@
         // Load reports from server
         function loadReports() {
             fetch("/reports")
-            .then(res => res.json())
-            .then(data => {
-                let rows = "";
-                data.forEach(r => {
-                    rows += `
-                        <tr>
-                            <td>${r.id}</td>
-                            <td>${r.date}</td>
-                            <td>${r.house}</td>
-                            <td>${r.room}</td>
-                            <td>${r.urgency}</td>
-                            <td>${r.problem}</td>
-                            <td>${r.description}</td>
-                            <td><button onclick="resolveReport('${r.id}')">Resolve</button></td>
-                        </tr>`;
+                .then(res => res.json())
+                .then(data => {
+                    let rows = "";
+                    data.forEach(r => {
+                        rows += `
+                            <tr>
+                                <td>${r.id}</td>
+                                <td>${r.date}</td>
+                                <td>${r.house}</td>
+                                <td>${r.room}</td>
+                                <td>${r.urgency}</td>
+                                <td>${r.problem}</td>
+                                <td>${r.description}</td>
+                                <td>
+                                    <button onclick="resolveReport('${r.id}')">
+                                        Resolve
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    document.getElementById("reportTable").innerHTML = rows;
                 });
-                document.getElementById("reportTable").innerHTML = rows;
-            });
         }
 
         // Delete a report
@@ -177,9 +214,33 @@
             .then(() => loadReports());
         }
 
-        // Logout function (just redirect to login page)
+        // Download CSV file
+        function downloadCSV() {
+            fetch("/reports")
+                .then(res => res.json())
+                .then(data => {
+                    let csv = "ID,Date,House,Room,Urgency,Problem,Description\n";
+
+                    data.forEach(r => {
+                        csv += `"${r.id}","${r.date}","${r.house}","${r.room}","${r.urgency}","${r.problem}","${r.description}"\n`;
+                    });
+
+                    const blob = new Blob([csv], { type: "text/csv" });
+                    const url = window.URL.createObjectURL(blob);
+
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "maintenance_reports.csv";
+                    document.body.appendChild(a);
+                    a.click();
+
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                });
+        }
+
+        // Logout
         function logout() {
-            // In a real app, you’d clear a token/session here
             window.location.href = "index.html";
         }
 
