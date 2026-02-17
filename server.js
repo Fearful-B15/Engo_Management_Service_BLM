@@ -4,17 +4,22 @@ import path from "path";
 import csv from "csv-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
+import { fileURLToPath } from "url";
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
+// Fix __dirname for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static("public")); // serves HTML files inside /public
+app.use(express.static(path.join(__dirname, "public")));
 
-// CSV FILES
-const adminFile = "Admin.csv";
-const reportsFile = "reports.csv";
+// CSV FILES (absolute paths for Render safety)
+const adminFile = path.join(__dirname, "Admin.csv");
+const reportsFile = path.join(__dirname, "reports.csv");
 
 // =======================
 // CSV READ HELPER
@@ -22,10 +27,16 @@ const reportsFile = "reports.csv";
 function readCSV(filePath) {
     return new Promise((resolve) => {
         const results = [];
+
+        if (!fs.existsSync(filePath)) {
+            return resolve([]);
+        }
+
         fs.createReadStream(filePath)
             .pipe(csv())
             .on("data", (data) => results.push(data))
-            .on("end", () => resolve(results));
+            .on("end", () => resolve(results))
+            .on("error", () => resolve([]));
     });
 }
 
@@ -39,8 +50,8 @@ app.post("/login", async (req, res) => {
 
     const found = admins.find(
         (a) =>
-            a.employee_id.trim() === employee_id.trim() &&
-            a.password.trim() === password.trim()
+            (a.employee_id || a.Employee_ID || "").trim() === employee_id?.trim() &&
+            (a.password || a.Password || "").trim() === password?.trim()
     );
 
     res.json({ success: !!found });
@@ -52,10 +63,16 @@ app.post("/login", async (req, res) => {
 app.get("/reports", async (req, res) => {
     const reports = await readCSV(reportsFile);
 
-    // Ensure status always exists
+    // Normalize keys (fixes undefined issue)
     const normalized = reports.map((r) => ({
-        ...r,
-        status: r.status || "Not Started",
+        id: r.id || r.ID,
+        date: r.date || r.Date,
+        house: r.house || r.House,
+        room: r.room || r.Room,
+        urgency: r.urgency || r.Urgency,
+        problem: r.problem || r.Problem,
+        description: r.description || r.Description,
+        status: r.status || r.Status || "Not Started",
     }));
 
     res.json(normalized);
@@ -69,7 +86,13 @@ app.post("/addReport", (req, res) => {
 
     const status = "Not Started";
 
-    const line = `${id},${date},${house},${room},${urgency},${problem},${description},${status}\n`;
+    // Add header if file does not exist
+    if (!fs.existsSync(reportsFile)) {
+        const header = "id,date,house,room,urgency,problem,description,status\n";
+        fs.writeFileSync(reportsFile, header);
+    }
+
+    const line = `"${id}","${date}","${house}","${room}","${urgency}","${problem}","${description}","${status}"\n`;
 
     fs.appendFile(reportsFile, line, (err) => {
         if (err) return res.json({ success: false });
@@ -87,7 +110,8 @@ app.post("/updateStatus", async (req, res) => {
     let found = false;
 
     const updated = reports.map((r) => {
-        if (r.id === id) {
+        const currentId = r.id || r.ID;
+        if (currentId === id) {
             found = true;
             return { ...r, status };
         }
@@ -98,23 +122,31 @@ app.post("/updateStatus", async (req, res) => {
         return res.status(404).json({ success: false, message: "Not found" });
     }
 
+    writeReportsToCSV(updated, res);
+});
+
+// =======================
+// WRITE CSV HELPER
+// =======================
+function writeReportsToCSV(data, res) {
     const header = "id,date,house,room,urgency,problem,description,status\n";
-    const rows = updated
+
+    const rows = data
         .map(
             (r) =>
-                `${r.id},${r.date},${r.house},${r.room},${r.urgency},${r.problem},${r.description},${r.status}`
+                `"${r.id || r.ID}","${r.date || r.Date}","${r.house || r.House}","${r.room || r.Room}","${r.urgency || r.Urgency}","${r.problem || r.Problem}","${r.description || r.Description}","${r.status || r.Status || "Not Started"}"`
         )
         .join("\n");
 
     fs.writeFile(reportsFile, header + rows + "\n", (err) => {
-        if (err) return res.json({ success: false });
+        if (err) return res.status(500).json({ success: false });
         res.json({ success: true });
     });
-});
+}
 
 // =======================
 // START SERVER
 // =======================
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
