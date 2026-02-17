@@ -25,7 +25,7 @@
             position: fixed;
             width: 100%;
             top: 0;
-            z-index: 20; /* FIXED */
+            z-index: -20;
         }
 
         .top-nav h1 {
@@ -108,23 +108,18 @@
             background: #254c7d;
         }
 
-        .resolve-btn {
-            background: #254c7d;
-        }
-
-        .resolve-btn:hover {
-            background: #1162c5;
-        }
-
         select {
             padding: 6px;
             margin-right: 10px;
         }
 
+        /* ========================= */
         /* Urgency Badge Styling */
+        /* ========================= */
+
         .urgency-badge {
             padding: 4px 10px;
-            border-radius: 4px;
+            border-radius: 12px;
             font-size: 13px;
             font-weight: bold;
             display: inline-block;
@@ -132,22 +127,22 @@
 
         .urgency-low {
             background-color: #4CAF50;
-            color: rgb(0, 0, 0);
+            color: white;
         }
 
         .urgency-medium {
             background-color: #FFC107;
-            color: rgb(0, 0, 0);
+            color: black;
         }
 
         .urgency-high {
             background-color: #FF9800;
-            color: rgb(0, 0, 0);
+            color: white;
         }
 
         .urgency-critical {
             background-color: #F44336;
-            color: rgb(0, 0, 0);
+            color: white;
         }
 
         @media (max-width: 768px) {
@@ -177,6 +172,7 @@
 <div class="top-nav">
     <span class="menu-toggle" onclick="toggleMenu()">☰</span>
     <h1>Dashboard</h1>
+    <a href="index.html" onclick="logout()" style="margin-right: 55px;">Logout</a>
 </div>
 
 <div class="side-nav" id="sideNav">
@@ -210,7 +206,6 @@
                 <th>Urgency</th>
                 <th>Problem</th>
                 <th>Description</th>
-                <th>Action</th>
             </tr>
         </thead>
         <tbody id="reportTable"></tbody>
@@ -218,119 +213,99 @@
 </div>
 
 <script>
-let allReports = [];
+    let allReports = [];
 
-function toggleMenu() {
-    document.getElementById('sideNav').classList.toggle('active');
-}
-
-function loadReports() {
-    fetch("/reports")
-        .then(res => res.json())
-        .then(data => {
-            allReports = data;
-            renderTable(data);
-        })
-        .catch(err => console.error("Error loading reports:", err));
-}
-
-function renderTable(data) {
-    let rows = "";
-
-    data.forEach(r => {
-
-        let urgencyClass = "";
-
-        if (r.urgency === "Green-Low") urgencyClass = "urgency-low";
-        else if (r.urgency === "Yellow-Medium") urgencyClass = "urgency-medium";
-        else if (r.urgency === "Orange-High") urgencyClass = "urgency-high";
-        else if (r.urgency === "Red-Critical") urgencyClass = "urgency-critical";
-
-        rows += `
-            <tr>
-                <td>${r.id}</td>
-                <td>${r.date}</td>
-                <td>${r.house}</td>
-                <td>${r.room}</td>
-                <td>
-                    <span class="urgency-badge ${urgencyClass}">
-                        ${r.urgency}
-                    </span>
-                </td>
-                <td>${r.problem}</td>
-                <td>${r.description}</td>
-                <td>
-                    <button class="resolve-btn" data-id="${r.id}">
-                        Resolve
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-
-    document.getElementById("reportTable").innerHTML = rows;
-
-    document.querySelectorAll(".resolve-btn").forEach(btn => {
-        btn.addEventListener("click", function() {
-            const id = this.dataset.id;
-            resolveReport(id);
-        });
-    });
-}
-
-function applyFilters() {
-    const urgency = document.getElementById("urgencyFilter").value;
-    let filtered = allReports;
-
-    if (urgency !== "all") {
-        filtered = allReports.filter(r => r.urgency === urgency);
+    function toggleMenu() {
+        document.getElementById('sideNav').classList.toggle('active');
     }
 
-    renderTable(filtered);
-}
+    function loadReports() {
+        fetch("/reports")
+            .then(res => res.json())
+            .then(data => {
+                allReports = data;
+                renderTable(data);
+            })
+            .catch(err => console.error("Error loading reports:", err));
+    }
 
-function resolveReport(id) {
-    if (!confirm("Are you sure you want to resolve this report?")) return;
+    function renderTable(data) {
+        let rows = "";
 
-    fetch("/deleteReport", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id })
-    })
-    .then(res => res.json())
-    .then(response => {
-        if (response.success) {
-            loadReports();
-        } else {
-            alert("Delete failed.");
+        data.forEach(r => {
+
+            let urgencyClass = "";
+
+            if (r.urgency === "Green-Low") {
+                urgencyClass = "urgency-low";
+            } 
+            else if (r.urgency === "Yellow-Medium") {
+                urgencyClass = "urgency-medium";
+            } 
+            else if (r.urgency === "Orange-High") {
+                urgencyClass = "urgency-high";
+            } 
+            else if (r.urgency === "Red-Critical") {
+                urgencyClass = "urgency-critical";
+            }
+
+            rows += `
+                <tr>
+                    <td>${r.id}</td>
+                    <td>${r.date}</td>
+                    <td>${r.house}</td>
+                    <td>${r.room}</td>
+                    <td>
+                        <span class="urgency-badge ${urgencyClass}">
+                            ${r.urgency}
+                        </span>
+                    </td>
+                    <td>${r.problem}</td>
+                    <td>${r.description}</td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("reportTable").innerHTML = rows;
+    }
+
+    function applyFilters() {
+        const urgency = document.getElementById("urgencyFilter").value;
+
+        let filtered = allReports;
+
+        if (urgency !== "all") {
+            filtered = allReports.filter(r => r.urgency === urgency);
         }
-    })
-    .catch(err => console.error("Delete error:", err));
-}
 
-function downloadCSV() {
-    let csv = "ID,Date,House,Room,Urgency,Problem,Description\n";
+        renderTable(filtered);
+    }
 
-    allReports.forEach(r => {
-        csv += `"${r.id}","${r.date}","${r.house}","${r.room}","${r.urgency}","${r.problem}","${r.description}"\n`;
-    });
+    function downloadCSV() {
+        let csv = "ID,Date,House,Room,Urgency,Problem,Description\n";
 
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+        allReports.forEach(r => {
+            csv += `"${r.id}","${r.date}","${r.house}","${r.room}","${r.urgency}","${r.problem}","${r.description}"\n`;
+        });
 
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "maintenance_reports.csv";
-    document.body.appendChild(a);
-    a.click();
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
 
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-}
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "maintenance_reports.csv";
+        document.body.appendChild(a);
+        a.click();
 
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
 
+    function logout() {
+        window.location.href = "index.html";
+    }
 
-loadReports();
+    loadReports();
 </script>
 
 </body>
