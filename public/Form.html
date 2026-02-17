@@ -150,8 +150,8 @@
             <option>Room 4</option>
             <option>Room 5</option>
             <option>Room 6</option>
-            <option>Room 7</option>
-            <option>Room 8</option>
+            <option>Lounge</option>
+            <option>Kitchen</option>
             <option>Bathroom</option>
             <option>NA</option>
         </select>
@@ -166,10 +166,23 @@
         </select>
 
         <label for="problem">Problem:</label>
-        <input type="text" id="problem" placeholder="Describe the problem..." required>
+        <select id="problem" required>
+            <option value="">-- Select Problem --</option>
+            <option value="Electrical Fault">Electrical Fault</option>
+            <option value="Plumbing Issue">Plumbing Issue</option>
+            <option value="Structural Damage">Structural Damage</option>
+            <option value="Appliance Malfunction">Appliance Malfunction</option>
+            <option value="Heating/Cooling Problem">Heating/Cooling Problem</option>
+            <option value="Water Leakage">Water Leakage</option>
+            <option value="Pest Control">Pest Control</option>
+            <option value="Broken Window">Broken Window</option>
+            <option value="Geyser not working">Geyser not working</option>
+            <option value="Other">Other</option>
+
+        </select>
 
         <label for="description">Additional Description (optional):</label>
-        <textarea id="description" placeholder="Provide more details..."></textarea>
+        <textarea id="description" placeholder="Describe the Problem..."></textarea>
 
         <button type="submit">Submit Report</button>
     </form>
